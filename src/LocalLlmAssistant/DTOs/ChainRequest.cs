@@ -1,0 +1,66 @@
+using System.Text.Json.Serialization;
+
+namespace LocalLlmAssistant.DTOs;
+
+public class ChainRequest
+{
+    [JsonPropertyName("query")]
+    public string Query { get; set; } = "";
+
+    [JsonPropertyName("chain_models")]
+    public List<string> ChainModels { get; set; } = new();
+
+    [JsonPropertyName("enable_cot")]
+    public bool EnableCoT { get; set; } = true;
+
+    [JsonPropertyName("max_iterations")]
+    public int MaxIterations { get; set; } = 5;
+
+    [JsonPropertyName("context")]
+    public Dictionary<string, object>? Context { get; set; }
+}
+
+public class ChainResponse
+{
+    [JsonPropertyName("success")]
+    public bool Success { get; set; }
+
+    [JsonPropertyName("result")]
+    public string Result { get; set; } = "";
+
+    [JsonPropertyName("iterations")]
+    public List<ChainIteration> Iterations { get; set; } = new();
+
+    [JsonPropertyName("error")]
+    public string? Error { get; set; }
+
+    [JsonPropertyName("execution_time_ms")]
+    public long ExecutionTimeMs { get; set; }
+}
+
+public class ChainIteration
+{
+    [JsonPropertyName("iteration")]
+    public int Iteration { get; set; }
+
+    [JsonPropertyName("model_id")]
+    public string ModelId { get; set; } = "";
+
+    [JsonPropertyName("model_name")]
+    public string ModelName { get; set; } = "";
+
+    [JsonPropertyName("input")]
+    public string Input { get; set; } = "";
+
+    [JsonPropertyName("output")]
+    public string Output { get; set; } = "";
+
+    [JsonPropertyName("thinking")]
+    public string? Thinking { get; set; }
+
+    [JsonPropertyName("is_final")]
+    public bool IsFinal { get; set; }
+
+    [JsonPropertyName("execution_time_ms")]
+    public long ExecutionTimeMs { get; set; }
+}

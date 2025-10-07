@@ -1,5 +1,6 @@
 using LocalLlmAssistant.Data;
 using LocalLlmAssistant.Models;
+using LocalLlmAssistant.Services.Chain;
 using LocalLlmAssistant.Services.Embeddings;
 using LocalLlmAssistant.Services.Llm;
 using LocalLlmAssistant.Services.Rag;
@@ -19,6 +20,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 
 builder.Services.Configure<RagConfig>(builder.Configuration.GetSection("Rag"));
 builder.Services.Configure<LlmConfig>(builder.Configuration.GetSection("Llm"));
+builder.Services.Configure<ChainConfig>(builder.Configuration.GetSection("Chain"));
 
 builder.Services.AddDbContext<AppDbContext>(opt =>
 {
@@ -35,6 +37,7 @@ builder.Services.AddScoped<RagRetriever>();
 builder.Services.AddScoped<ToolRegistry>();
 builder.Services.AddScoped<ToolRunner>();
 builder.Services.AddScoped<LocalLlmAssistant.Services.HistoryCompressor>();
+builder.Services.AddScoped<LocalLlmAssistant.Services.Chain.ChainService>();
 
 builder.Services.AddScoped<LlmClientResolver>();
 // OllamaClient と LmStudioClient は LlmClientResolver で動的に作成されるため、
