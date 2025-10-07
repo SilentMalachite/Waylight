@@ -1,0 +1,12 @@
+{
+  "description": "Template configuration for this project. See https://www.codebuff.com/config for all options.",
+  "startupProcesses": [
+    {
+      "name": "api",
+      "command": "dotnet run --project src/LocalLlmAssistant",
+      "enabled": true,
+      "stdoutFile": "logs/api.log"
+    }
+  ],
+  "fileChangeHooks": []
+}
