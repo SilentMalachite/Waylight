@@ -27,35 +27,77 @@ public class AdminIngestController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] IngestReq req)
     {
-        if (string.IsNullOrWhiteSpace(req.Text)) return BadRequest(new { error = "text required" });
-
-        var userId = HttpContext.User?.Identity?.Name ?? "guest";
-        var doc = new Document { Title = $"ingested-{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}", UserId = userId };
-        _db.Documents.Add(doc);
-        await _db.SaveChangesAsync();
-
-        // 簡易チャンク
-        var parts = System.Text.RegularExpressions.Regex.Matches(req.Text, ".{1,800}", System.Text.RegularExpressions.RegexOptions.Singleline);
-        var texts = parts.Select(m => m.Value).ToList();
-        var vecs = await _emb.EmbedAsync(texts);
-
-        for (int i = 0; i < texts.Count; i++)
+        if (string.IsNullOrWhiteSpace(req.Text)) 
         {
-            _db.DocumentChunks.Add(new DocumentChunk { DocumentId = doc.Id, Text = texts[i], Embedding = JsonSerializer.Serialize(vecs[i]) });
+            return BadRequest(new { error = "text required" });
         }
-        await _db.SaveChangesAsync();
 
-        // FTS へ投入（仮想テーブルに同期トリガがある場合は不要）
         try
         {
-            await _db.Database.ExecuteSqlRawAsync("INSERT INTO document_chunks_fts(rowid, text) SELECT id, text FROM document_chunks WHERE document_id = {0}", doc.Id);
-        } 
-        catch (Exception ex) 
-        { 
-            // FTSテーブルが存在しない場合は無視（初期セットアップ時は正常）
-            _logger.LogDebug(ex, "FTS insert failed (this is normal during initial setup)");
-        }
+            var userId = HttpContext.User?.Identity?.Name ?? "guest";
+            var doc = new Document 
+            { 
+                Title = $"ingested-{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}", 
+                UserId = userId 
+            };
+            _db.Documents.Add(doc);
+            await _db.SaveChangesAsync();
 
-        return Ok(new { status = "ok", chunks = texts.Count });
+            // 簡易チャンク（正規表現の最適化）
+            var parts = System.Text.RegularExpressions.Regex.Matches(
+                req.Text, 
+                ".{1,800}", 
+                System.Text.RegularExpressions.RegexOptions.Singleline
+            );
+            var texts = parts.Select(m => m.Value).ToList();
+            
+            if (texts.Count == 0)
+            {
+                return BadRequest(new { error = "No chunks created from text" });
+            }
+
+            _logger.LogInformation("Creating {Count} chunks for document {DocId}", texts.Count, doc.Id);
+            
+            var vecs = await _emb.EmbedAsync(texts);
+
+            if (vecs.Count != texts.Count)
+            {
+                _logger.LogError("Embedding count mismatch: {VecCount} vs {TextCount}", vecs.Count, texts.Count);
+                return StatusCode(500, new { error = "Embedding generation failed" });
+            }
+
+            for (int i = 0; i < texts.Count; i++)
+            {
+                _db.DocumentChunks.Add(new DocumentChunk 
+                { 
+                    DocumentId = doc.Id, 
+                    Text = texts[i], 
+                    Embedding = JsonSerializer.Serialize(vecs[i]) 
+                });
+            }
+            await _db.SaveChangesAsync();
+
+            // FTS へ投入（仮想テーブルに同期トリガがある場合は不要）
+            try
+            {
+                await _db.Database.ExecuteSqlRawAsync(
+                    "INSERT INTO document_chunks_fts(rowid, text) SELECT id, text FROM document_chunks WHERE document_id = {0}", 
+                    doc.Id
+                );
+                _logger.LogInformation("Successfully inserted {Count} chunks into FTS for document {DocId}", texts.Count, doc.Id);
+            } 
+            catch (Exception ex) 
+            { 
+                // FTSテーブルが存在しない場合は無視（初期セットアップ時は正常）
+                _logger.LogWarning(ex, "FTS insert failed for document {DocId} (this is normal during initial setup)", doc.Id);
+            }
+
+            return Ok(new { status = "ok", documentId = doc.Id, chunks = texts.Count });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error ingesting document");
+            return StatusCode(500, new { error = "Internal server error", message = ex.Message });
+        }
     }
 }

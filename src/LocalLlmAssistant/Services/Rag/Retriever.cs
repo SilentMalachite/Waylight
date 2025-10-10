@@ -24,44 +24,87 @@ public class RagRetriever
 
     public async Task<List<DocumentChunk>> SimilarChunksAsync(string query, int? k = null)
     {
-        if (string.IsNullOrWhiteSpace(query)) return new();
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            _logger.LogDebug("Empty query provided to SimilarChunksAsync");
+            return new List<DocumentChunk>();
+        }
 
         var topK = k ?? _config.TopK;
-        if (topK <= 0) return new();
+        if (topK <= 0)
+        {
+            _logger.LogWarning("Invalid topK value: {TopK}", topK);
+            return new List<DocumentChunk>();
+        }
 
-        var qvec = await _emb.EmbedAsync(query);
-
-        // FTS 後候補取得（存在しない場合は直近で代替）
-        List<int> ids;
         try
         {
-            var rows = await _db.Database.SqlQueryRaw<int>(
-                "SELECT rowid FROM document_chunks_fts WHERE document_chunks_fts MATCH @query LIMIT @limit",
-                new SqliteParameter("@query", query),
-                new SqliteParameter("@limit", _config.FtsCandidates))
-                .ToListAsync();
-            ids = rows;
+            var qvec = await _emb.EmbedAsync(query);
+            
+            if (qvec == null || qvec.Length == 0)
+            {
+                _logger.LogError("Failed to generate query embedding");
+                return new List<DocumentChunk>();
+            }
+
+            // FTS 後候補取得（存在しない場合は直近で代替）
+            List<int> ids;
+            try
+            {
+                var rows = await _db.Database.SqlQueryRaw<int>(
+                    "SELECT rowid FROM document_chunks_fts WHERE document_chunks_fts MATCH @query LIMIT @limit",
+                    new SqliteParameter("@query", query),
+                    new SqliteParameter("@limit", _config.FtsCandidates))
+                    .ToListAsync();
+                ids = rows;
+                
+                _logger.LogDebug("FTS returned {Count} candidates", ids.Count);
+            }
+            catch (Exception ex)
+            {
+                // FTSテーブルが存在しない場合は直近のチャンクを代替として使用
+                _logger.LogWarning(ex, "FTS query failed, falling back to recent chunks");
+                ids = await _db.DocumentChunks
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Select(c => c.Id)
+                    .Take(_config.FtsCandidates)
+                    .ToListAsync();
+            }
+
+            if (ids.Count == 0)
+            {
+                _logger.LogInformation("No document chunks found for query");
+                return new List<DocumentChunk>();
+            }
+
+            var candidates = await _db.DocumentChunks.Where(c => ids.Contains(c.Id)).ToListAsync();
+            
+            // 埋め込みベクトルを持つ候補のみ抽出
+            var candidatesWithEmbeddings = candidates
+                .Select(c => (c, emb: string.IsNullOrWhiteSpace(c.Embedding) 
+                    ? Array.Empty<double>() 
+                    : JsonSerializer.Deserialize<double[]>(c.Embedding!) ?? Array.Empty<double>()))
+                .Where(t => t.emb.Length > 0)
+                .ToList();
+
+            if (candidatesWithEmbeddings.Count == 0)
+            {
+                _logger.LogWarning("No candidates with valid embeddings found");
+                return new List<DocumentChunk>();
+            }
+
+            // MMR で多様化しながら k 件選択
+            var selected = MmrSelect(qvec, candidatesWithEmbeddings, topK, _config.MmrLambda);
+            
+            _logger.LogInformation("Selected {Count} chunks using MMR", selected.Count);
+            
+            return selected;
         }
         catch (Exception ex)
         {
-            // FTSテーブルが存在しない場合は直近のチャンクを代替として使用
-            _logger.LogWarning(ex, "FTS query failed, falling back to recent chunks");
-            ids = await _db.DocumentChunks.OrderByDescending(c => c.CreatedAt).Select(c => c.Id).Take(_config.FtsCandidates).ToListAsync();
+            _logger.LogError(ex, "Error in SimilarChunksAsync");
+            return new List<DocumentChunk>();
         }
-
-        var candidates = await _db.DocumentChunks.Where(c => ids.Contains(c.Id)).ToListAsync();
-        
-        // 埋め込みベクトルを持つ候補のみ抽出
-        var candidatesWithEmbeddings = candidates
-            .Select(c => (c, emb: string.IsNullOrWhiteSpace(c.Embedding) 
-                ? Array.Empty<double>() 
-                : JsonSerializer.Deserialize<double[]>(c.Embedding!) ?? Array.Empty<double>()))
-            .Where(t => t.emb.Length > 0)
-            .ToList();
-
-        // MMR で多様化しながら k 件選択
-        var selected = MmrSelect(qvec, candidatesWithEmbeddings, topK, _config.MmrLambda);
-        return selected;
     }
 
     /// <summary>

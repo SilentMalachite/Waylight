@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace LocalLlmAssistant.DTOs;
@@ -5,6 +6,8 @@ namespace LocalLlmAssistant.DTOs;
 public class ChainRequest
 {
     [JsonPropertyName("query")]
+    [Required(ErrorMessage = "Query is required")]
+    [StringLength(5000, MinimumLength = 1, ErrorMessage = "Query must be between 1 and 5000 characters")]
     public string Query { get; set; } = "";
 
     [JsonPropertyName("chain_models")]
@@ -14,6 +17,7 @@ public class ChainRequest
     public bool EnableCoT { get; set; } = true;
 
     [JsonPropertyName("max_iterations")]
+    [Range(1, 10, ErrorMessage = "MaxIterations must be between 1 and 10")]
     public int MaxIterations { get; set; } = 5;
 
     [JsonPropertyName("context")]
