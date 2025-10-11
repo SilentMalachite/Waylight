@@ -22,6 +22,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
     options.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+    options.SerializerOptions.PropertyNameCaseInsensitive = true;
 });
 
 // 設定
@@ -55,7 +56,15 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // HTTPクライアント
-builder.Services.AddHttpClient();
+builder.Services.AddHttpClient()
+    .ConfigureHttpClientDefaults(http =>
+    {
+        // デフォルトのHTTPクライアント設定
+        http.ConfigureHttpClient(client =>
+        {
+            client.Timeout = TimeSpan.FromMinutes(5);
+        });
+    });
 
 // サービス登録
 builder.Services.AddSingleton<StreamBroker>();
@@ -71,7 +80,13 @@ builder.Services.AddScoped<LlmClientResolver>();
 // 直接登録しない（ActivatorUtilities.CreateInstance を使用）
 
 // コントローラー
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+        options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+    });
 
 var app = builder.Build();
 
@@ -95,6 +110,15 @@ using (var scope = app.Services.CreateScope())
 // 静的ファイルの提供を有効化
 app.UseDefaultFiles();
 app.UseStaticFiles();
+
+// CORS設定（必要に応じて）
+if (app.Environment.IsDevelopment())
+{
+    app.UseCors(policy => 
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader());
+}
 
 // Swagger（開発環境のみ）
 if (app.Environment.IsDevelopment())

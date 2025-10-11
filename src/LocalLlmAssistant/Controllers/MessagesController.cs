@@ -31,6 +31,17 @@ public class MessagesController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] ChatRequest req)
     {
+        // 入力検証
+        if (string.IsNullOrWhiteSpace(req.Content))
+        {
+            return BadRequest(new { error = "Content is required" });
+        }
+
+        if (req.Content.Length > 10000)
+        {
+            return BadRequest(new { error = "Content exceeds maximum length of 10000 characters" });
+        }
+
         try
         {
             var userId = HttpContext.User?.Identity?.Name ?? "guest";
@@ -42,8 +53,11 @@ public class MessagesController : ControllerBase
                 await _db.SaveChangesAsync();
             }
 
-            var backend = req.Backend ?? pref.Backend.ToString();
-            var convo = await _db.Conversations.Where(c => c.UserId == userId).OrderByDescending(c => c.UpdatedAt).FirstOrDefaultAsync();
+            var backend = req.Backend ?? pref.Backend.ToString().ToLowerInvariant();
+            var convo = await _db.Conversations
+                .Where(c => c.UserId == userId)
+                .OrderByDescending(c => c.UpdatedAt)
+                .FirstOrDefaultAsync();
             
             if (convo == null)
             {

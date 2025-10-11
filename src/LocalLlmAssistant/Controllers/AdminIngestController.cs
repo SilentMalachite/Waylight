@@ -9,8 +9,11 @@ namespace LocalLlmAssistant.Controllers;
 
 [ApiController]
 [Route("api/admin/ingest")]
-public class AdminIngestController : ControllerBase
+public partial class AdminIngestController : ControllerBase
 {
+    [System.Text.RegularExpressions.GeneratedRegex(".{1,800}", System.Text.RegularExpressions.RegexOptions.Singleline)]
+    private static partial System.Text.RegularExpressions.Regex ChunkRegex();
+
     private readonly AppDbContext _db;
     private readonly EmbeddingsClient _emb;
     private readonly ILogger<AdminIngestController> _logger;
@@ -44,11 +47,8 @@ public class AdminIngestController : ControllerBase
             await _db.SaveChangesAsync();
 
             // 簡易チャンク（正規表現の最適化）
-            var parts = System.Text.RegularExpressions.Regex.Matches(
-                req.Text, 
-                ".{1,800}", 
-                System.Text.RegularExpressions.RegexOptions.Singleline
-            );
+            var chunkRegex = ChunkRegex();
+            var parts = chunkRegex.Matches(req.Text);
             var texts = parts.Select(m => m.Value).ToList();
             
             if (texts.Count == 0)

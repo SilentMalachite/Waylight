@@ -97,13 +97,14 @@ public class EmbeddingsClient
 
     private async Task<List<double[]>> EmbedWithOllamaAsync(List<string> texts)
     {
-        var result = new List<double[]>();
+        var result = new List<double[]>(texts.Count);
         
         foreach (var t in texts)
         {
             if (string.IsNullOrWhiteSpace(t))
             {
                 _logger.LogWarning("Skipping empty text in embedding batch");
+                result.Add(Array.Empty<double>());
                 continue;
             }
             

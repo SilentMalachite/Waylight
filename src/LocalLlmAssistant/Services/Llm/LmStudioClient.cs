@@ -45,7 +45,7 @@ public class LmStudioClient : ILlmClient
         while ((line = await sr.ReadLineAsync()) != null)
         {
             if (!line.StartsWith("data:")) continue;
-            var payload = line.Substring(5).Trim();
+            var payload = line[5..].Trim();
             if (payload == "[DONE]") break;
             
             JsonDocument? doc = null;

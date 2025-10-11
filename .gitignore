@@ -14,6 +14,7 @@ App_Data/*.db*
 
 ## Logs
 logs/*.log
+*.log
 
 ## IDE
 .vs/
@@ -29,4 +30,12 @@ Thumbs.db
 
 ## Environment
 appsettings.Development.json
+appsettings.Production.json
 *.env
+.env.*
+
+## Security
+*.key
+*.pem
+*.pfx
+secrets.json

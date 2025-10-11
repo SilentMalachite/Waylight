@@ -78,9 +78,9 @@ public class HistoryCompressor
 
         // TODO: LLM を使って履歴を要約
         var summary = "過去の会話を要約: " + string.Join("; ", messages
-            .Where(m => m.Content != null && m.Content.Length > 0)
+            .Where(m => !string.IsNullOrEmpty(m.Content))
             .Select(m => m.Content!.Length > 50 
-                ? m.Content.Substring(0, 50) + "..." 
+                ? m.Content[..50] + "..." 
                 : m.Content));
         
         _logger.LogDebug("Generated summary with length {Length}", summary.Length);

@@ -16,9 +16,33 @@ public class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // Column types
         modelBuilder.Entity<Message>().Property(p => p.ToolCallsJson).HasColumnType("TEXT");
         modelBuilder.Entity<Message>().Property(p => p.ErrorJson).HasColumnType("TEXT");
         modelBuilder.Entity<DocumentChunk>().Property(p => p.Embedding).HasColumnType("TEXT");
         modelBuilder.Entity<Document>().Property(p => p.Visibility).HasDefaultValue("private");
+
+        // Indexes for performance
+        modelBuilder.Entity<Message>()
+            .HasIndex(m => m.ConversationId);
+        
+        modelBuilder.Entity<Message>()
+            .HasIndex(m => m.CreatedAt);
+
+        modelBuilder.Entity<DocumentChunk>()
+            .HasIndex(dc => dc.DocumentId);
+        
+        modelBuilder.Entity<Conversation>()
+            .HasIndex(c => c.UserId);
+        
+        modelBuilder.Entity<Conversation>()
+            .HasIndex(c => c.UpdatedAt);
+
+        modelBuilder.Entity<UserPreference>()
+            .HasIndex(up => up.UserId)
+            .IsUnique();
+
+        modelBuilder.Entity<ToolLog>()
+            .HasIndex(tl => new { tl.UserId, tl.CreatedAt });
     }
 }
