@@ -58,14 +58,14 @@ public class MessagesController : ControllerBase
                 .Where(c => c.UserId == userId)
                 .OrderByDescending(c => c.UpdatedAt)
                 .FirstOrDefaultAsync();
-            
+
             if (convo == null)
             {
                 convo = new Conversation { UserId = userId };
                 _db.Conversations.Add(convo);
                 await _db.SaveChangesAsync();
             }
-            
+
             convo.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
 
@@ -110,7 +110,7 @@ public class MessagesController : ControllerBase
             while (toolIterationCount < maxToolIterations)
             {
                 var hasToolCall = false;
-                
+
                 await foreach (var ev in client.ChatStreamAsync(messages, tools: pref.ToolsEnabled ? _toolRegistry.Schema() : null))
                 {
                     if (ev.Type == "token")
@@ -123,10 +123,10 @@ public class MessagesController : ControllerBase
                         hasToolCall = true;
                         var name = ev.Name ?? "unknown";
                         var args = ev.Arguments ?? "{}";
-                        
+
                         _log.LogInformation("Executing tool: {Name} with args: {Args}", name, args);
                         var result = await _toolRunner.CallAsync(userId, name, args);
-                        
+
                         // ツール呼び出しを記録
                         toolCalls.Add(new Dictionary<string, object>
                         {
@@ -134,16 +134,16 @@ public class MessagesController : ControllerBase
                             ["arguments"] = args,
                             ["result"] = result
                         });
-                        
+
                         _log.LogInformation("Tool executed: {Name} with result: {Result}", name, result);
-                        
+
                         // ツール結果をメッセージに追加
                         if (!string.IsNullOrEmpty(assistantResponse))
                         {
                             messages.Add(new Dictionary<string, string> { ["role"] = "assistant", ["content"] = assistantResponse });
                         }
                         messages.Add(new Dictionary<string, string> { ["role"] = "tool", ["content"] = $"Tool: {name}\nResult: {result}" });
-                        
+
                         assistantResponse = ""; // リセット
                         toolIterationCount++;
                         break; // 現在のストリームを終了し、再試行
@@ -154,7 +154,7 @@ public class MessagesController : ControllerBase
                         await _broker.PublishAsync(userKey, "error", JsonSerializer.Serialize(new { error = ev.Data }));
                     }
                 }
-                
+
                 // ツール呼び出しがなければループを終了
                 if (!hasToolCall)
                 {
@@ -165,29 +165,29 @@ public class MessagesController : ControllerBase
             await _broker.PublishAsync(userKey, "done", "{}");
 
             // ユーザーメッセージを保存
-            _db.Messages.Add(new Message 
-            { 
-                ConversationId = convo.Id, 
-                Role = "user", 
-                Content = req.Content, 
+            _db.Messages.Add(new Message
+            {
+                ConversationId = convo.Id,
+                Role = "user",
+                Content = req.Content,
                 Model = pref.Model,
                 TokenCount = EstimateTokenCount(req.Content)
             });
-            
+
             // アシスタントの応答を保存
             if (!string.IsNullOrEmpty(assistantResponse))
             {
-                _db.Messages.Add(new Message 
-                { 
-                    ConversationId = convo.Id, 
-                    Role = "assistant", 
-                    Content = assistantResponse, 
+                _db.Messages.Add(new Message
+                {
+                    ConversationId = convo.Id,
+                    Role = "assistant",
+                    Content = assistantResponse,
                     Model = pref.Model,
                     ToolCallsJson = toolCalls.Count > 0 ? JsonSerializer.Serialize(toolCalls) : null,
                     TokenCount = EstimateTokenCount(assistantResponse)
                 });
             }
-            
+
             await _db.SaveChangesAsync();
 
             return Accepted();

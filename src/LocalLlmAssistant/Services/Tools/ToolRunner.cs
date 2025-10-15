@@ -20,8 +20,8 @@ public class ToolRunner
             Dictionary<string, object?> result = name switch
             {
                 "get_time" => new() { ["now"] = DateTimeOffset.Now.ToString("o") },
-                "echo"     => new() { ["echo"] = TryGetString(args, "text") },
-                _          => new() { ["error"] = $"unknown tool: {name}" }
+                "echo" => new() { ["echo"] = TryGetString(args, "text") },
+                _ => new() { ["error"] = $"unknown tool: {name}" }
             };
             success = !result.ContainsKey("error");
             resultJson = JsonSerializer.Serialize(result);

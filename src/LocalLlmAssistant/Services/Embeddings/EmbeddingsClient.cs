@@ -19,10 +19,10 @@ public class EmbeddingsClient
         _http = factory.CreateClient();
         _http.Timeout = TimeSpan.FromSeconds(60); // タイムアウト設定
         _logger = logger;
-        
+
         _backend = Environment.GetEnvironmentVariable("EMBEDDINGS_BACKEND") ?? "ollama";
-        _model   = Environment.GetEnvironmentVariable("EMBEDDINGS_MODEL") ?? "nomic-embed-text:latest";
-        
+        _model = Environment.GetEnvironmentVariable("EMBEDDINGS_MODEL") ?? "nomic-embed-text:latest";
+
         if (_backend == "lmstudio")
         {
             _base = Environment.GetEnvironmentVariable("LMSTUDIO_BASE_URL") ?? "http://localhost:1234/v1";
@@ -35,7 +35,7 @@ public class EmbeddingsClient
             _path = "/api/embeddings";
             _apiKey = "";
         }
-        
+
         _logger.LogInformation("EmbeddingsClient initialized with backend: {Backend}, model: {Model}", _backend, _model);
     }
 
@@ -75,17 +75,17 @@ public class EmbeddingsClient
         var req = new HttpRequestMessage(HttpMethod.Post, $"{_base}{_path}");
         req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
         req.Content = new StringContent(
-            JsonSerializer.Serialize(new { model = _model, input = texts }), 
-            Encoding.UTF8, 
+            JsonSerializer.Serialize(new { model = _model, input = texts }),
+            Encoding.UTF8,
             "application/json"
         );
-        
+
         var resp = await _http.SendAsync(req);
         resp.EnsureSuccessStatusCode();
-        
+
         var json = await resp.Content.ReadAsStringAsync();
         using var doc = JsonDocument.Parse(json);
-        
+
         return doc.RootElement.GetProperty("data")
             .EnumerateArray()
             .Select(e => e.GetProperty("embedding")
@@ -98,7 +98,7 @@ public class EmbeddingsClient
     private async Task<List<double[]>> EmbedWithOllamaAsync(List<string> texts)
     {
         var result = new List<double[]>(texts.Count);
-        
+
         foreach (var t in texts)
         {
             if (string.IsNullOrWhiteSpace(t))
@@ -107,38 +107,38 @@ public class EmbeddingsClient
                 result.Add(Array.Empty<double>());
                 continue;
             }
-            
+
             var req = new HttpRequestMessage(HttpMethod.Post, $"{_base}{_path}");
             req.Content = new StringContent(
-                JsonSerializer.Serialize(new { model = _model, prompt = t }), 
-                Encoding.UTF8, 
+                JsonSerializer.Serialize(new { model = _model, prompt = t }),
+                Encoding.UTF8,
                 "application/json"
             );
-            
+
             var resp = await _http.SendAsync(req);
             resp.EnsureSuccessStatusCode();
-            
+
             var json = await resp.Content.ReadAsStringAsync();
             using var doc = JsonDocument.Parse(json);
-            
+
             var arr = doc.RootElement.GetProperty("embedding")
                 .EnumerateArray()
                 .Select(v => v.GetDouble())
                 .ToArray();
-            
+
             result.Add(arr);
         }
-        
+
         return result;
     }
 
-    public async Task<double[]> EmbedAsync(string text) 
+    public async Task<double[]> EmbedAsync(string text)
     {
         if (string.IsNullOrWhiteSpace(text))
         {
             throw new ArgumentException("Text cannot be null or empty", nameof(text));
         }
-        
+
         var results = await EmbedAsync(new List<string> { text });
         return results.FirstOrDefault() ?? Array.Empty<double>();
     }

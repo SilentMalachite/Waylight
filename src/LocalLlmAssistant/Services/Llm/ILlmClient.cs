@@ -24,6 +24,6 @@ public class LlmClientResolver
 
 public interface ILlmClient
 {
-    IAsyncEnumerable<LlmStreamEvent> ChatStreamAsync(List<Dictionary<string,string>> messages, object? tools = null, CancellationToken ct = default);
+    IAsyncEnumerable<LlmStreamEvent> ChatStreamAsync(List<Dictionary<string, string>> messages, object? tools = null, CancellationToken ct = default);
 }
 

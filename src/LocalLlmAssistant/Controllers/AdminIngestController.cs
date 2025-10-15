@@ -18,10 +18,10 @@ public partial class AdminIngestController : ControllerBase
     private readonly EmbeddingsClient _emb;
     private readonly ILogger<AdminIngestController> _logger;
 
-    public AdminIngestController(AppDbContext db, EmbeddingsClient emb, ILogger<AdminIngestController> logger) 
-    { 
-        _db = db; 
-        _emb = emb; 
+    public AdminIngestController(AppDbContext db, EmbeddingsClient emb, ILogger<AdminIngestController> logger)
+    {
+        _db = db;
+        _emb = emb;
         _logger = logger;
     }
 
@@ -30,7 +30,7 @@ public partial class AdminIngestController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] IngestReq req)
     {
-        if (string.IsNullOrWhiteSpace(req.Text)) 
+        if (string.IsNullOrWhiteSpace(req.Text))
         {
             return BadRequest(new { error = "text required" });
         }
@@ -38,10 +38,10 @@ public partial class AdminIngestController : ControllerBase
         try
         {
             var userId = HttpContext.User?.Identity?.Name ?? "guest";
-            var doc = new Document 
-            { 
-                Title = $"ingested-{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}", 
-                UserId = userId 
+            var doc = new Document
+            {
+                Title = $"ingested-{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}",
+                UserId = userId
             };
             _db.Documents.Add(doc);
             await _db.SaveChangesAsync();
@@ -50,14 +50,14 @@ public partial class AdminIngestController : ControllerBase
             var chunkRegex = ChunkRegex();
             var parts = chunkRegex.Matches(req.Text);
             var texts = parts.Select(m => m.Value).ToList();
-            
+
             if (texts.Count == 0)
             {
                 return BadRequest(new { error = "No chunks created from text" });
             }
 
             _logger.LogInformation("Creating {Count} chunks for document {DocId}", texts.Count, doc.Id);
-            
+
             var vecs = await _emb.EmbedAsync(texts);
 
             if (vecs.Count != texts.Count)
@@ -68,11 +68,11 @@ public partial class AdminIngestController : ControllerBase
 
             for (int i = 0; i < texts.Count; i++)
             {
-                _db.DocumentChunks.Add(new DocumentChunk 
-                { 
-                    DocumentId = doc.Id, 
-                    Text = texts[i], 
-                    Embedding = JsonSerializer.Serialize(vecs[i]) 
+                _db.DocumentChunks.Add(new DocumentChunk
+                {
+                    DocumentId = doc.Id,
+                    Text = texts[i],
+                    Embedding = JsonSerializer.Serialize(vecs[i])
                 });
             }
             await _db.SaveChangesAsync();
@@ -81,13 +81,13 @@ public partial class AdminIngestController : ControllerBase
             try
             {
                 await _db.Database.ExecuteSqlRawAsync(
-                    "INSERT INTO document_chunks_fts(rowid, text) SELECT id, text FROM document_chunks WHERE document_id = {0}", 
+                    "INSERT INTO document_chunks_fts(rowid, text) SELECT id, text FROM document_chunks WHERE document_id = {0}",
                     doc.Id
                 );
                 _logger.LogInformation("Successfully inserted {Count} chunks into FTS for document {DocId}", texts.Count, doc.Id);
-            } 
-            catch (Exception ex) 
-            { 
+            }
+            catch (Exception ex)
+            {
                 // FTSテーブルが存在しない場合は無視（初期セットアップ時は正常）
                 _logger.LogWarning(ex, "FTS insert failed for document {DocId} (this is normal during initial setup)", doc.Id);
             }

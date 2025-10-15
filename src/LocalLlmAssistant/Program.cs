@@ -35,7 +35,7 @@ builder.Services.AddDbContext<AppDbContext>(opt =>
 {
     var connectionString = builder.Configuration.GetConnectionString("Default") ?? "Data Source=App_Data/app.db";
     opt.UseSqlite(connectionString);
-    
+
     // 開発環境では詳細なエラーを有効化
     if (builder.Environment.IsDevelopment())
     {
@@ -48,8 +48,9 @@ builder.Services.AddDbContext<AppDbContext>(opt =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new() { 
-        Title = "Waylight API", 
+    c.SwaggerDoc("v1", new()
+    {
+        Title = "Waylight API",
         Version = "v1",
         Description = "Local LLM Assistant API with RAG and Tool execution"
     });
@@ -95,7 +96,7 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-    
+
     try
     {
         await db.Database.MigrateAsync();
@@ -114,7 +115,7 @@ app.UseStaticFiles();
 // CORS設定（必要に応じて）
 if (app.Environment.IsDevelopment())
 {
-    app.UseCors(policy => 
+    app.UseCors(policy =>
         policy.AllowAnyOrigin()
               .AllowAnyMethod()
               .AllowAnyHeader());

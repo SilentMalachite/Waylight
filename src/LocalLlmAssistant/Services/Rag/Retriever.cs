@@ -40,7 +40,7 @@ public class RagRetriever
         try
         {
             var qvec = await _emb.EmbedAsync(query);
-            
+
             if (qvec == null || qvec.Length == 0)
             {
                 _logger.LogError("Failed to generate query embedding");
@@ -57,7 +57,7 @@ public class RagRetriever
                     new SqliteParameter("@limit", _config.FtsCandidates))
                     .ToListAsync();
                 ids = rows;
-                
+
                 _logger.LogDebug("FTS returned {Count} candidates", ids.Count);
             }
             catch (Exception ex)
@@ -78,11 +78,11 @@ public class RagRetriever
             }
 
             var candidates = await _db.DocumentChunks.Where(c => ids.Contains(c.Id)).ToListAsync();
-            
+
             // 埋め込みベクトルを持つ候補のみ抽出
             var candidatesWithEmbeddings = candidates
-                .Select(c => (c, emb: string.IsNullOrWhiteSpace(c.Embedding) 
-                    ? Array.Empty<double>() 
+                .Select(c => (c, emb: string.IsNullOrWhiteSpace(c.Embedding)
+                    ? Array.Empty<double>()
                     : JsonSerializer.Deserialize<double[]>(c.Embedding!) ?? Array.Empty<double>()))
                 .Where(t => t.emb.Length > 0)
                 .ToList();
@@ -95,9 +95,9 @@ public class RagRetriever
 
             // MMR で多様化しながら k 件選択
             var selected = MmrSelect(qvec, candidatesWithEmbeddings, topK, _config.MmrLambda);
-            
+
             _logger.LogInformation("Selected {Count} chunks using MMR", selected.Count);
-            
+
             return selected;
         }
         catch (Exception ex)
@@ -136,13 +136,13 @@ public class RagRetriever
                 {
                     // クエリとの類似度
                     var relevance = VectorMath.Cosine(queryVec, cand.emb);
-                    
+
                     // 既選択チャンクとの最大類似度（多様性ペナルティ）
                     var maxSim = selected.Max(sel => VectorMath.Cosine(cand.emb, sel.emb));
-                    
+
                     // MMR スコア = λ * 関連性 - (1-λ) * 既選択との類似度
                     var mmrScore = lambda * relevance - (1 - lambda) * maxSim;
-                    
+
                     return (cand, mmrScore);
                 })
                 .OrderByDescending(t => t.mmrScore)
@@ -162,7 +162,7 @@ public static class RagFormatter
     {
         if (chunks.Count == 0) return "";
         var header = "以下は内部コンテキストの抜粋です。事実に基づいて回答してください。\n\n";
-        var body = string.Join("\n\n", chunks.Select((c,i) => $"[{i+1}] {c.Text}"));
+        var body = string.Join("\n\n", chunks.Select((c, i) => $"[{i + 1}] {c.Text}"));
         return header + body;
     }
 }

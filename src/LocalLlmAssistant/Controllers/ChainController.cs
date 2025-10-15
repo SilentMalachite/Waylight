@@ -23,9 +23,9 @@ public class ChainController : ControllerBase
         try
         {
             _logger.LogInformation("Processing chain request with {ModelCount} models", request.ChainModels.Count);
-            
+
             var response = await _chainService.ProcessChainAsync(request);
-            
+
             if (response.Success)
             {
                 return Ok(response);
@@ -72,9 +72,9 @@ public class ChainController : ControllerBase
         try
         {
             _logger.LogInformation("Processing chain stream request with {ModelCount} models", request.ChainModels.Count);
-            
+
             var response = await _chainService.ProcessChainAsync(request);
-            
+
             // 各イテレーションをストリーミング
             foreach (var iteration in response.Iterations)
             {
@@ -111,7 +111,7 @@ public class ChainController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error in chain stream processing");
-            
+
             var errorData = new
             {
                 type = "error",

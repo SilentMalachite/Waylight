@@ -17,8 +17,8 @@ public class ChainService
     private readonly ILogger<ChainService> _logger;
 
     public ChainService(
-        AppDbContext db, 
-        LlmClientResolver llmResolver, 
+        AppDbContext db,
+        LlmClientResolver llmResolver,
         IOptions<ChainConfig> config,
         ILogger<ChainService> logger)
     {
@@ -32,7 +32,7 @@ public class ChainService
     {
         var stopwatch = Stopwatch.StartNew();
         var iterations = new List<ChainIteration>();
-        
+
         try
         {
             _logger.LogInformation("Starting chain processing with {ModelCount} models", request.ChainModels.Count);
@@ -56,10 +56,10 @@ public class ChainService
             {
                 var model = chainModels[i];
                 var iteration = await ProcessIterationAsync(
-                    i + 1, 
-                    model, 
-                    currentInput, 
-                    context, 
+                    i + 1,
+                    model,
+                    currentInput,
+                    context,
                     request.EnableCoT,
                     i == chainModels.Count - 1 // 最後のイテレーションかどうか
                 );
@@ -115,7 +115,7 @@ public class ChainService
         {
             // システムプロンプトを構築
             var systemPrompt = BuildSystemPrompt(model, enableCoT, isFinal, context);
-            
+
             // メッセージを構築
             var messages = new List<Dictionary<string, string>>
             {
@@ -125,7 +125,7 @@ public class ChainService
 
             // LLMクライアントを取得
             var client = _llmResolver.Resolve(model.Backend, model.Model);
-            
+
             // ストリーミング応答を処理
             var output = "";
             var thinking = "";
@@ -204,7 +204,7 @@ public class ChainService
     private List<ChainModel> GetChainModels(List<string> modelIds)
     {
         var availableModels = _config.Models.Where(m => m.IsEnabled).ToList();
-        
+
         if (!modelIds.Any())
         {
             return availableModels.Take(2).ToList(); // デフォルトで2つのモデル

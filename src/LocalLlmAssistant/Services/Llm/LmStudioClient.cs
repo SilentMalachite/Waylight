@@ -24,7 +24,7 @@ public class LmStudioClient : ILlmClient
         _logger = logger;
     }
 
-    public async IAsyncEnumerable<LlmStreamEvent> ChatStreamAsync(List<Dictionary<string,string>> messages, object? tools = null, [EnumeratorCancellation] CancellationToken ct = default)
+    public async IAsyncEnumerable<LlmStreamEvent> ChatStreamAsync(List<Dictionary<string, string>> messages, object? tools = null, [EnumeratorCancellation] CancellationToken ct = default)
     {
         var body = new Dictionary<string, object?>
         {
@@ -47,7 +47,7 @@ public class LmStudioClient : ILlmClient
             if (!line.StartsWith("data:")) continue;
             var payload = line[5..].Trim();
             if (payload == "[DONE]") break;
-            
+
             JsonDocument? doc = null;
             try
             {

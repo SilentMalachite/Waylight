@@ -9,9 +9,9 @@ public class StreamController : ControllerBase
 {
     private readonly StreamBroker _broker;
     private readonly ILogger<StreamController> _logger;
-    
-    public StreamController(StreamBroker broker, ILogger<StreamController> logger) 
-    { 
+
+    public StreamController(StreamBroker broker, ILogger<StreamController> logger)
+    {
         _broker = broker;
         _logger = logger;
     }
@@ -24,12 +24,12 @@ public class StreamController : ControllerBase
             Response.Headers.Append("Content-Type", "text/event-stream");
             Response.Headers.Append("Cache-Control", "no-cache");
             Response.Headers.Append("Connection", "keep-alive");
-            
+
             var userId = HttpContext.User?.Identity?.Name ?? "guest";
             var key = $"sse:{userId}";
-            
+
             _logger.LogInformation("SSE stream started for user: {UserId}", userId);
-            
+
             var reader = _broker.Subscribe(key);
 
             await foreach (var packet in reader.ReadAllAsync(HttpContext.RequestAborted))
@@ -38,7 +38,7 @@ public class StreamController : ControllerBase
                 await Response.WriteAsync($"data: {packet.Data}\n\n");
                 await Response.Body.FlushAsync();
             }
-            
+
             _logger.LogInformation("SSE stream ended for user: {UserId}", userId);
         }
         catch (OperationCanceledException)

@@ -22,7 +22,7 @@ public class OllamaClient : ILlmClient
         _logger = logger;
     }
 
-    public async IAsyncEnumerable<LlmStreamEvent> ChatStreamAsync(List<Dictionary<string,string>> messages, object? tools = null, [EnumeratorCancellation] CancellationToken ct = default)
+    public async IAsyncEnumerable<LlmStreamEvent> ChatStreamAsync(List<Dictionary<string, string>> messages, object? tools = null, [EnumeratorCancellation] CancellationToken ct = default)
     {
         var payload = new { model = _model, stream = true, messages = messages, tools = tools };
         var req = new HttpRequestMessage(HttpMethod.Post, $"{_base}/api/chat");
@@ -35,7 +35,7 @@ public class OllamaClient : ILlmClient
         while ((line = await sr.ReadLineAsync()) != null)
         {
             if (string.IsNullOrWhiteSpace(line)) continue;
-            
+
             JsonDocument? doc = null;
             try
             {

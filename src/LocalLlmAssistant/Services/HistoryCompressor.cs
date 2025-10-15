@@ -24,7 +24,7 @@ public class HistoryCompressor
         }
 
         var totalTokens = messages.Sum(m => m.TokenCount);
-        
+
         if (totalTokens <= MAX_TOKENS_THRESHOLD)
         {
             _logger.LogDebug("Token count {Total} is within threshold {Threshold}", totalTokens, MAX_TOKENS_THRESHOLD);
@@ -54,7 +54,7 @@ public class HistoryCompressor
             }
         }
 
-        _logger.LogInformation("Compressed to {Count} messages with {Tokens} tokens", 
+        _logger.LogInformation("Compressed to {Count} messages with {Tokens} tokens",
             systemMessages.Count + compressed.Count, currentTokens);
 
         // システムメッセージを先頭に配置
@@ -79,12 +79,12 @@ public class HistoryCompressor
         // TODO: LLM を使って履歴を要約
         var summary = "過去の会話を要約: " + string.Join("; ", messages
             .Where(m => !string.IsNullOrEmpty(m.Content))
-            .Select(m => m.Content!.Length > 50 
-                ? m.Content[..50] + "..." 
+            .Select(m => m.Content!.Length > 50
+                ? m.Content[..50] + "..."
                 : m.Content));
-        
+
         _logger.LogDebug("Generated summary with length {Length}", summary.Length);
-        
+
         return new Message
         {
             Role = "system",
