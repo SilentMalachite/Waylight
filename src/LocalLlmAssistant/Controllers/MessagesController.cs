@@ -45,6 +45,8 @@ public class MessagesController : ControllerBase
         try
         {
             var userId = HttpContext.User?.Identity?.Name ?? "guest";
+            var sessionId = GetOrCreateSessionId();
+
             var pref = await _db.UserPreferences.FirstOrDefaultAsync(p => p.UserId == userId);
             if (pref == null)
             {
@@ -54,10 +56,24 @@ public class MessagesController : ControllerBase
             }
 
             var backend = req.Backend ?? pref.Backend.ToString().ToLowerInvariant();
-            var convo = await _db.Conversations
-                .Where(c => c.UserId == userId)
-                .OrderByDescending(c => c.UpdatedAt)
-                .FirstOrDefaultAsync();
+            Conversation? convo = null;
+
+            if (req.ConversationId.HasValue)
+            {
+                convo = await _db.Conversations.FirstOrDefaultAsync(c => c.Id == req.ConversationId.Value);
+                if (convo == null || !string.Equals(convo.UserId, userId, StringComparison.Ordinal))
+                {
+                    return NotFound(new { error = "Conversation not found" });
+                }
+            }
+
+            if (convo == null)
+            {
+                convo = await _db.Conversations
+                    .Where(c => c.UserId == userId)
+                    .OrderByDescending(c => c.UpdatedAt)
+                    .FirstOrDefaultAsync();
+            }
 
             if (convo == null)
             {
@@ -69,7 +85,7 @@ public class MessagesController : ControllerBase
             convo.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
 
-            var userKey = $"sse:{userId}";
+            var userKey = $"sse:{sessionId}:{userId}";
             var contexts = pref.RagEnabled ? await _rag.SimilarChunksAsync(req.Content) : new List<DocumentChunk>();
 
             var messages = new List<Dictionary<string, string>>
@@ -203,5 +219,23 @@ public class MessagesController : ControllerBase
     {
         // 簡易的なトークン数推定（実際にはより正確なトークナイザーを使用すべき）
         return string.IsNullOrEmpty(text) ? 0 : text.Length / 4;
+    }
+
+    private string GetOrCreateSessionId()
+    {
+        const string cookieName = "waylight-session";
+        if (!Request.Cookies.TryGetValue(cookieName, out var sessionId) || string.IsNullOrWhiteSpace(sessionId))
+        {
+            sessionId = Guid.NewGuid().ToString("N");
+            Response.Cookies.Append(cookieName, sessionId, new CookieOptions
+            {
+                HttpOnly = true,
+                SameSite = SameSiteMode.Lax,
+                Secure = Request.IsHttps,
+                MaxAge = TimeSpan.FromDays(30)
+            });
+        }
+
+        return sessionId;
     }
 }

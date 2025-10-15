@@ -19,14 +19,15 @@ public class StreamController : ControllerBase
     [HttpGet]
     public async Task Get()
     {
+        var sessionId = GetOrCreateSessionId();
+        var userId = HttpContext.User?.Identity?.Name ?? "guest";
+        var key = $"sse:{sessionId}:{userId}";
+
         try
         {
             Response.Headers.Append("Content-Type", "text/event-stream");
             Response.Headers.Append("Cache-Control", "no-cache");
             Response.Headers.Append("Connection", "keep-alive");
-
-            var userId = HttpContext.User?.Identity?.Name ?? "guest";
-            var key = $"sse:{userId}";
 
             _logger.LogInformation("SSE stream started for user: {UserId}", userId);
 
@@ -51,5 +52,23 @@ public class StreamController : ControllerBase
             _logger.LogError(ex, "Error in SSE stream");
             throw;
         }
+    }
+
+    private string GetOrCreateSessionId()
+    {
+        const string cookieName = "waylight-session";
+        if (!Request.Cookies.TryGetValue(cookieName, out var sessionId) || string.IsNullOrWhiteSpace(sessionId))
+        {
+            sessionId = Guid.NewGuid().ToString("N");
+            Response.Cookies.Append(cookieName, sessionId, new CookieOptions
+            {
+                HttpOnly = true,
+                SameSite = SameSiteMode.Lax,
+                Secure = Request.IsHttps,
+                MaxAge = TimeSpan.FromDays(30)
+            });
+        }
+
+        return sessionId;
     }
 }

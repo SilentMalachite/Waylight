@@ -19,6 +19,107 @@
             justify-content: center;
             align-items: center;
             padding: 20px;
+            color: #333;
+        }
+
+        .auth-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .auth-overlay.hidden {
+            display: none;
+        }
+
+        .auth-card {
+            background: white;
+            padding: 32px;
+            border-radius: 18px;
+            width: 100%;
+            max-width: 360px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .auth-card h2 {
+            font-size: 22px;
+            font-weight: 600;
+            color: #4a4a68;
+        }
+
+        .auth-card p {
+            font-size: 13px;
+            color: #6c6f80;
+            line-height: 1.5;
+        }
+
+        .auth-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .auth-group label {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .auth-card input {
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid #d0d3e2;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .auth-card input:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+
+        .auth-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .auth-card button {
+            flex: 1;
+            padding: 10px 14px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .auth-card button.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .auth-card button.secondary {
+            background: #f1f3f8;
+            color: #4a4a68;
+        }
+
+        .auth-card button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.2);
+        }
+
+        .auth-error {
+            min-height: 18px;
+            font-size: 12px;
+            color: #d9534f;
         }
 
         .container {
@@ -36,19 +137,62 @@
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 20px 30px;
-            text-align: center;
+            padding: 24px 30px;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
         }
 
         .header h1 {
             font-size: 24px;
             font-weight: 600;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
         }
 
         .header p {
             font-size: 14px;
             opacity: 0.9;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-info.hidden {
+            display: none;
+        }
+
+        .user-info span {
+            font-size: 14px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 6px 12px;
+            border-radius: 999px;
+        }
+
+        #logout-button {
+            background: rgba(255, 255, 255, 0.15);
+            border: none;
+            color: white;
+            padding: 8px 14px;
+            border-radius: 16px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.2s;
+        }
+
+        #logout-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        #logout-button:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.3);
         }
 
         .status {
@@ -57,16 +201,29 @@
             border-bottom: 1px solid #e9ecef;
             font-size: 13px;
             color: #6c757d;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .status-indicator {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
-            background: #28a745;
-            margin-right: 8px;
+            background: #6c757d;
             animation: pulse 2s infinite;
+        }
+
+        .status-indicator.ok {
+            background: #28a745;
+        }
+
+        .status-indicator.error {
+            background: #dc3545;
+        }
+
+        .status-indicator.loading {
+            background: #ffc107;
         }
 
         @keyframes pulse {
@@ -101,6 +258,7 @@
             padding: 15px 20px;
             border-radius: 18px;
             word-wrap: break-word;
+            white-space: pre-wrap;
         }
 
         .message.user .message-content {
@@ -164,13 +322,17 @@
         }
 
         .chain-controls {
-            display: flex;
+            display: none;
             gap: 20px;
             align-items: center;
             padding: 15px;
             background: #f8f9fa;
             border-radius: 10px;
             border: 1px solid #e9ecef;
+        }
+
+        .chain-controls.active {
+            display: flex;
         }
 
         .chain-controls select {
@@ -200,164 +362,295 @@
             gap: 10px;
         }
 
-        .input-box {
+        .input-row textarea {
             flex: 1;
-            padding: 12px 18px;
-            border: 2px solid #e9ecef;
-            border-radius: 25px;
-            font-size: 14px;
-            outline: none;
+            min-height: 80px;
+            border: 1px solid #dee2e6;
+            border-radius: 12px;
+            padding: 14px 16px;
+            font-size: 15px;
+            resize: none;
             transition: border-color 0.3s;
         }
 
-        .input-box:focus {
+        .input-row textarea:focus {
             border-color: #667eea;
+            outline: none;
         }
 
         .send-button {
-            padding: 12px 30px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            border-radius: 25px;
-            font-size: 14px;
+            border-radius: 12px;
+            padding: 0 24px;
+            font-size: 15px;
             font-weight: 600;
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .send-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
-
-        .send-button:active {
-            transform: translateY(0);
         }
 
         .send-button:disabled {
             opacity: 0.6;
             cursor: not-allowed;
             transform: none;
+            box-shadow: none;
+        }
+
+        .send-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
         }
 
         .loading {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.6);
+            border-top-color: white;
             border-radius: 50%;
-            background: #667eea;
-            margin: 0 3px;
-            animation: bounce 1.4s infinite ease-in-out both;
+            animation: spin 1s linear infinite;
         }
 
-        .loading:nth-child(1) { animation-delay: -0.32s; }
-        .loading:nth-child(2) { animation-delay: -0.16s; }
-
-        @keyframes bounce {
-            0%, 80%, 100% { transform: scale(0); }
-            40% { transform: scale(1); }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
-        .welcome {
-            text-align: center;
-            padding: 40px 20px;
-            color: #6c757d;
-        }
+        @media (max-width: 768px) {
+            .container {
+                height: 90vh;
+            }
 
-        .welcome h2 {
-            font-size: 20px;
-            margin-bottom: 10px;
-            color: #333;
-        }
+            .header h1 {
+                font-size: 20px;
+            }
 
-        .welcome p {
-            font-size: 14px;
-            line-height: 1.6;
+            .input-row {
+                flex-direction: column;
+            }
+
+            .message-content {
+                max-width: 100%;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🌟 Waylight</h1>
-            <p>Local LLM Assistant - プライベートで安全なAIアシスタント</p>
-        </div>
-        <div class="status">
-            <span class="status-indicator"></span>
-            <span id="status-text">APIに接続中...</span>
-        </div>
-        <div class="chat-container" id="chat-container">
-            <div class="welcome">
-                <h2>Waylightへようこそ！</h2>
-                <p>ローカルで完全に動作するLLMアシスタントです。<br>
-                   何でもお気軽にお聞きください。</p>
+    <div class="auth-overlay" id="auth-overlay">
+        <div class="auth-card">
+            <h2>Waylight にサインイン</h2>
+            <p>アカウントをお持ちでない場合は「新規登録」を押してください。</p>
+            <div class="auth-group">
+                <label for="auth-username">ユーザー名</label>
+                <input id="auth-username" type="text" autocomplete="username" placeholder="例: alice" />
+            </div>
+            <div class="auth-group">
+                <label for="auth-password">パスワード</label>
+                <input id="auth-password" type="password" autocomplete="current-password" placeholder="8文字以上" />
+            </div>
+            <div class="auth-error" id="auth-error"></div>
+            <div class="auth-actions">
+                <button id="login-button" class="primary">ログイン</button>
+                <button id="register-button" class="secondary">新規登録</button>
             </div>
         </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <div class="header-top">
+                <div>
+                    <h1>Waylight - Local LLM Assistant</h1>
+                    <p>ローカル環境で安全に会話とツール実行を行えます。</p>
+                </div>
+                <div class="user-info hidden" id="user-info">
+                    <span id="user-name">未ログイン</span>
+                    <button id="logout-button" disabled>ログアウト</button>
+                </div>
+            </div>
+        </div>
+        <div class="status">
+            <span class="status-indicator" id="status-indicator"></span>
+            <span id="status-label">API接続: 未サインイン</span>
+        </div>
+        <div class="chat-container" id="chat-container"></div>
         <div class="input-container">
             <div class="input-controls">
                 <div class="mode-selector">
                     <label class="mode-option">
                         <input type="radio" name="mode" value="single" checked>
-                        <span>単一LLM</span>
+                        <span>シングルLLM</span>
                     </label>
                     <label class="mode-option">
                         <input type="radio" name="mode" value="chain">
-                        <span>チェーン連携</span>
+                        <span>マルチモデルチェーン</span>
                     </label>
                 </div>
-                <div class="chain-controls" id="chain-controls" style="display: none;">
-                    <select id="chain-models" multiple>
-                        <option value="reasoner">推論エキスパート</option>
-                        <option value="synthesizer">統合アシスタント</option>
-                        <option value="creative">創造的アシスタント</option>
-                    </select>
+                <div class="chain-controls" id="chain-controls">
+                    <select id="chain-models" multiple></select>
                     <label class="cot-toggle">
                         <input type="checkbox" id="enable-cot" checked>
-                        <span>思考過程表示</span>
+                        <span>思考過程（Chain-of-Thought）を記録</span>
                     </label>
                 </div>
             </div>
             <div class="input-row">
-                <input type="text" class="input-box" id="message-input" placeholder="メッセージを入力してください..." />
+                <textarea id="message-input" placeholder="メッセージを入力してください..." rows="3"></textarea>
                 <button class="send-button" id="send-button">送信</button>
             </div>
         </div>
     </div>
 
     <script>
+        const authOverlay = document.getElementById('auth-overlay');
+        const authUsername = document.getElementById('auth-username');
+        const authPassword = document.getElementById('auth-password');
+        const authError = document.getElementById('auth-error');
+        const loginButton = document.getElementById('login-button');
+        const registerButton = document.getElementById('register-button');
+        const logoutButton = document.getElementById('logout-button');
+        const userInfo = document.getElementById('user-info');
+        const userNameLabel = document.getElementById('user-name');
+
+        const statusIndicator = document.getElementById('status-indicator');
+        const statusLabel = document.getElementById('status-label');
+
         const chatContainer = document.getElementById('chat-container');
         const messageInput = document.getElementById('message-input');
         const sendButton = document.getElementById('send-button');
-        const statusText = document.getElementById('status-text');
+        const chainControls = document.getElementById('chain-controls');
+        const chainModelsSelect = document.getElementById('chain-models');
+        const enableCotCheckbox = document.getElementById('enable-cot');
 
+        let isAuthenticated = false;
+        let currentUser = null;
         let eventSource = null;
-        let isProcessing = false;
         let currentAssistantMessage = null;
+        let isProcessing = false;
         let availableModels = [];
 
-        // API接続確認
-        async function checkAPIStatus() {
-            try {
-                const response = await fetch('/healthz');
-                const data = await response.json();
-                if (data.status === 'ok') {
-                    statusText.textContent = 'API接続: 正常';
-                    connectToStream();
-                } else {
-                    statusText.textContent = 'API接続: エラー';
-                }
-            } catch (error) {
-                statusText.textContent = 'API接続: 失敗';
-                console.error('API check failed:', error);
+        function setStatus(text, state) {
+            statusLabel.textContent = text;
+            statusIndicator.className = `status-indicator ${state}`;
+        }
+
+        function showAuthOverlay(message = '') {
+            authOverlay.classList.remove('hidden');
+            authError.textContent = message;
+            authPassword.value = '';
+            setStatus('API接続: 未サインイン', 'error');
+            setTimeout(() => authUsername.focus(), 50);
+        }
+
+        function hideAuthOverlay() {
+            authOverlay.classList.add('hidden');
+            authError.textContent = '';
+        }
+
+        function setAuthState(authenticated, username = null) {
+            isAuthenticated = authenticated;
+            currentUser = username;
+            if (authenticated) {
+                userInfo.classList.remove('hidden');
+                userNameLabel.textContent = username ?? 'ユーザー';
+                logoutButton.disabled = false;
+                hideAuthOverlay();
+            } else {
+                userInfo.classList.add('hidden');
+                userNameLabel.textContent = '未ログイン';
+                logoutButton.disabled = true;
+                closeStream();
             }
         }
 
-        // SSEストリームに接続
-        function connectToStream() {
-            if (eventSource) return;
+        async function handleAuth(isRegister) {
+            const username = authUsername.value.trim();
+            const password = authPassword.value;
 
-            eventSource = new EventSource('/api/stream');
+            if (!username || !password) {
+                authError.textContent = 'ユーザー名とパスワードを入力してください。';
+                return;
+            }
+
+            try {
+                const endpoint = isRegister ? '/api/auth/register' : '/api/auth/login';
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (!response.ok) {
+                    const data = await response.json().catch(() => ({}));
+                    authError.textContent = data.error || '認証に失敗しました。';
+                    return;
+                }
+
+                const data = await response.json();
+                setAuthState(true, data.username);
+                await postAuthSetup();
+            } catch (error) {
+                console.error('Auth error:', error);
+                authError.textContent = 'サーバーに接続できません。';
+            }
+        }
+
+        async function postAuthSetup() {
+            setStatus('API接続: 確認中', 'loading');
+            await checkAPIStatus();
+            await loadAvailableModels();
+            connectToStream();
+        }
+
+        async function checkAuthState() {
+            try {
+                const response = await fetch('/api/auth/me', { credentials: 'include', cache: 'no-cache' });
+                if (response.ok) {
+                    const data = await response.json();
+                    setAuthState(true, data.username);
+                    await postAuthSetup();
+                } else {
+                    setAuthState(false);
+                    showAuthOverlay();
+                }
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                setAuthState(false);
+                showAuthOverlay('サーバーに接続できません。');
+            }
+        }
+
+        async function checkAPIStatus() {
+            try {
+                setStatus('API接続: 確認中', 'loading');
+                const response = await fetch('/healthz', { credentials: 'include', cache: 'no-cache' });
+                if (!response.ok) {
+                    setStatus('API接続: エラー', 'error');
+                    return;
+                }
+                const data = await response.json();
+                if (data.status === 'ok') {
+                    setStatus('API接続: 正常', 'ok');
+                } else {
+                    setStatus('API接続: 異常', 'error');
+                }
+            } catch (error) {
+                console.error('API check failed:', error);
+                setStatus('API接続: 失敗', 'error');
+            }
+        }
+
+        function closeStream() {
+            if (eventSource) {
+                eventSource.close();
+                eventSource = null;
+            }
+        }
+
+        function connectToStream() {
+            if (!isAuthenticated || eventSource) return;
+
+            eventSource = new EventSource('/api/stream', { withCredentials: true });
 
             eventSource.addEventListener('token', (event) => {
                 const token = event.data;
@@ -377,13 +670,17 @@
 
             eventSource.addEventListener('error', (event) => {
                 console.error('SSE error:', event);
-                if (event.data) {
-                    addMessage('system', 'エラーが発生しました: ' + event.data);
-                }
                 currentAssistantMessage = null;
                 isProcessing = false;
                 sendButton.disabled = false;
                 sendButton.textContent = '送信';
+                closeStream();
+                setStatus('API接続: ストリーム再接続待機', 'loading');
+                setTimeout(() => {
+                    if (isAuthenticated) {
+                        connectToStream();
+                    }
+                }, 3000);
             });
 
             eventSource.onerror = (error) => {
@@ -391,71 +688,84 @@
             };
         }
 
-        // メッセージを追加
+        function handleUnauthorized() {
+            setAuthState(false);
+            showAuthOverlay('セッションが切断されました。再度サインインしてください。');
+        }
+
         function addMessage(role, content) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${role}`;
-            
+
             const contentDiv = document.createElement('div');
             contentDiv.className = 'message-content';
             contentDiv.textContent = content;
-            
+
             messageDiv.appendChild(contentDiv);
             chatContainer.appendChild(messageDiv);
             scrollToBottom();
-            
+
             return messageDiv;
         }
 
-        // スクロール
         function scrollToBottom() {
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
 
-        // 利用可能なモデルを読み込み
         async function loadAvailableModels() {
+            if (!isAuthenticated) return;
+
             try {
-                const response = await fetch('/api/chain/models');
+                const response = await fetch('/api/chain/models', { credentials: 'include' });
+                if (response.status === 401) {
+                    handleUnauthorized();
+                    return;
+                }
+
+                if (!response.ok) {
+                    console.error('Failed to load models');
+                    return;
+                }
+
                 const data = await response.json();
-                availableModels = data.models;
-                
-                // セレクトボックスを更新
-                const select = document.getElementById('chain-models');
-                select.innerHTML = '';
+                availableModels = data.models || [];
+
+                chainModelsSelect.innerHTML = '';
                 availableModels.forEach(model => {
                     const option = document.createElement('option');
                     option.value = model.id;
                     option.textContent = model.name;
-                    select.appendChild(option);
+                    chainModelsSelect.appendChild(option);
                 });
-                
-                // デフォルトで最初の2つを選択
+
                 if (availableModels.length >= 2) {
-                    select.options[0].selected = true;
-                    select.options[1].selected = true;
+                    chainModelsSelect.options[0].selected = true;
+                    chainModelsSelect.options[1].selected = true;
                 }
             } catch (error) {
                 console.error('Failed to load models:', error);
             }
         }
 
-        // メッセージ送信
         async function sendMessage() {
+            if (!isAuthenticated) {
+                showAuthOverlay('サインインしてからメッセージを送信してください。');
+                return;
+            }
+
             const content = messageInput.value.trim();
             if (!content || isProcessing) return;
 
-            // ユーザーメッセージを表示
             addMessage('user', content);
             messageInput.value = '';
 
-            // 送信中状態
             isProcessing = true;
             sendButton.disabled = true;
-            sendButton.innerHTML = '<span class="loading"></span><span class="loading"></span><span class="loading"></span>';
+            sendButton.innerHTML = '<span class="loading"></span>';
 
             try {
                 const mode = document.querySelector('input[name="mode"]:checked').value;
-                
+
                 if (mode === 'chain') {
                     await sendChainMessage(content);
                 } else {
@@ -469,29 +779,30 @@
             }
         }
 
-        // 単一LLMメッセージ送信
         async function sendSingleMessage(content) {
             const response = await fetch('/api/messages', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({
                     content: content,
                     backend: 'ollama'
                 })
             });
 
+            if (response.status === 401) {
+                handleUnauthorized();
+                throw new Error('サインインが必要です');
+            }
+
             if (!response.ok) {
                 throw new Error('送信に失敗しました');
             }
         }
 
-        // チェーンメッセージ送信
         async function sendChainMessage(content) {
-            const selectedModels = Array.from(document.getElementById('chain-models').selectedOptions)
-                .map(option => option.value);
-            const enableCoT = document.getElementById('enable-cot').checked;
+            const selectedModels = Array.from(chainModelsSelect.selectedOptions).map(option => option.value);
+            const enableCoT = enableCotCheckbox.checked;
 
             if (selectedModels.length === 0) {
                 throw new Error('チェーンモデルを選択してください');
@@ -499,9 +810,8 @@
 
             const response = await fetch('/api/chain/stream', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({
                     query: content,
                     chain_models: selectedModels,
@@ -510,11 +820,15 @@
                 })
             });
 
-            if (!response.ok) {
+            if (response.status === 401) {
+                handleUnauthorized();
+                throw new Error('サインインが必要です');
+            }
+
+            if (!response.ok || !response.body) {
                 throw new Error('チェーン送信に失敗しました');
             }
 
-            // ストリーミング応答を処理
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             let currentIteration = null;
@@ -523,45 +837,40 @@
                 const { done, value } = await reader.read();
                 if (done) break;
 
-                const chunk = decoder.decode(value);
+                const chunk = decoder.decode(value, { stream: true });
                 const lines = chunk.split('\n');
 
                 for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        try {
-                            const data = JSON.parse(line.substring(6));
-                            
-                            if (data.type === 'iteration') {
-                                // イテレーション開始
+                    if (!line.startsWith('data: ')) continue;
+
+                    try {
+                        const data = JSON.parse(line.substring(6));
+
+                        if (data.type === 'iteration') {
+                            currentIteration = addMessage('assistant', `[${data.model_name}] ${data.output}`);
+
+                            if (data.thinking && enableCoT) {
+                                const thinkingDiv = document.createElement('div');
+                                thinkingDiv.className = 'thinking-content';
+                                thinkingDiv.style.cssText = 'margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 8px; font-size: 13px; color: #6c757d;';
+                                thinkingDiv.textContent = `思考過程: ${data.thinking}`;
+                                currentIteration.querySelector('.message-content').appendChild(thinkingDiv);
+                            }
+                        } else if (data.type === 'final') {
+                            if (data.success) {
                                 if (currentIteration) {
-                                    currentIteration.querySelector('.message-content').textContent = currentIteration.querySelector('.message-content').textContent;
-                                }
-                                
-                                currentIteration = addMessage('assistant', `[${data.model_name}] ${data.output}`);
-                                
-                                if (data.thinking && enableCoT) {
-                                    const thinkingDiv = document.createElement('div');
-                                    thinkingDiv.className = 'thinking-content';
-                                    thinkingDiv.style.cssText = 'margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 8px; font-size: 13px; color: #6c757d;';
-                                    thinkingDiv.textContent = `思考過程: ${data.thinking}`;
-                                    currentIteration.querySelector('.message-content').appendChild(thinkingDiv);
-                                }
-                            } else if (data.type === 'final') {
-                                if (data.success) {
-                                    if (currentIteration) {
-                                        currentIteration.querySelector('.message-content').textContent = data.result;
-                                    } else {
-                                        addMessage('assistant', data.result);
-                                    }
+                                    currentIteration.querySelector('.message-content').textContent = data.result;
                                 } else {
-                                    addMessage('system', 'エラー: ' + data.error);
+                                    addMessage('assistant', data.result);
                                 }
-                            } else if (data.type === 'error') {
+                            } else {
                                 addMessage('system', 'エラー: ' + data.error);
                             }
-                        } catch (e) {
-                            console.error('Error parsing SSE data:', e);
+                        } else if (data.type === 'error') {
+                            addMessage('system', 'エラー: ' + data.error);
                         }
+                    } catch (e) {
+                        console.error('Error parsing SSE data:', e);
                     }
                 }
             }
@@ -571,8 +880,30 @@
             sendButton.textContent = '送信';
         }
 
-        // イベントリスナー
+        async function handleLogout() {
+            try {
+                await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+            } catch (error) {
+                console.error('Logout error:', error);
+            } finally {
+                setAuthState(false);
+                showAuthOverlay('ログアウトしました。');
+            }
+        }
+
+        loginButton.addEventListener('click', () => handleAuth(false));
+        registerButton.addEventListener('click', () => handleAuth(true));
+        logoutButton.addEventListener('click', handleLogout);
+
+        authPassword.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                handleAuth(false);
+            }
+        });
+
         sendButton.addEventListener('click', sendMessage);
+
         messageInput.addEventListener('keypress', (event) => {
             if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault();
@@ -580,30 +911,27 @@
             }
         });
 
-        // モード切り替えイベント
         document.querySelectorAll('input[name="mode"]').forEach(radio => {
             radio.addEventListener('change', function() {
-                const chainControls = document.getElementById('chain-controls');
                 if (this.value === 'chain') {
-                    chainControls.style.display = 'flex';
-                    loadAvailableModels();
+                    chainControls.classList.add('active');
+                    if (availableModels.length === 0) {
+                        loadAvailableModels();
+                    }
                 } else {
-                    chainControls.style.display = 'none';
+                    chainControls.classList.remove('active');
                 }
             });
         });
 
-        // チェーンモデル選択のデフォルト設定
-        document.getElementById('chain-models').addEventListener('change', function() {
-            if (this.selectedOptions.length === 0) {
-                // デフォルトで最初の2つを選択
+        chainModelsSelect.addEventListener('change', function() {
+            if (this.selectedOptions.length === 0 && this.options.length >= 2) {
                 this.options[0].selected = true;
                 this.options[1].selected = true;
             }
         });
 
-        // 初期化
-        checkAPIStatus();
+        checkAuthState();
     </script>
 </body>
 </html>

@@ -13,6 +13,7 @@ public class AppDbContext : DbContext
     public DbSet<Document> Documents => Set<Document>();
     public DbSet<DocumentChunk> DocumentChunks => Set<DocumentChunk>();
     public DbSet<ToolLog> ToolLogs => Set<ToolLog>();
+    public DbSet<UserAccount> UserAccounts => Set<UserAccount>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -44,5 +45,9 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<ToolLog>()
             .HasIndex(tl => new { tl.UserId, tl.CreatedAt });
+
+        modelBuilder.Entity<UserAccount>()
+            .HasIndex(u => u.UserName)
+            .IsUnique();
     }
 }

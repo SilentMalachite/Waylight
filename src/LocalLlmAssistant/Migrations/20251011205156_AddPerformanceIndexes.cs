@@ -10,6 +10,14 @@ namespace LocalLlmAssistant.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.Sql("DROP INDEX IF EXISTS \"IX_Messages_ConversationId\";");
+            migrationBuilder.Sql("DROP INDEX IF EXISTS \"IX_Messages_CreatedAt\";");
+            migrationBuilder.Sql("DROP INDEX IF EXISTS \"IX_DocumentChunks_DocumentId\";");
+            migrationBuilder.Sql("DROP INDEX IF EXISTS \"IX_Conversations_UserId\";");
+            migrationBuilder.Sql("DROP INDEX IF EXISTS \"IX_Conversations_UpdatedAt\";");
+            migrationBuilder.Sql("DROP INDEX IF EXISTS \"IX_UserPreferences_UserId\";");
+            migrationBuilder.Sql("DROP INDEX IF EXISTS \"IX_ToolLogs_UserId_CreatedAt\";");
+
             // Messages インデックス
             migrationBuilder.CreateIndex(
                 name: "IX_Messages_ConversationId",

@@ -135,14 +135,46 @@ public class ChainService
             {
                 if (ev.Type == "token")
                 {
-                    var token = ev.Data ?? "";
+                    var token = ev.Data ?? string.Empty;
+
+                    if (!isThinking)
+                    {
+                        var thinkStart = token.IndexOf("<think>", StringComparison.OrdinalIgnoreCase);
+                        if (thinkStart >= 0)
+                        {
+                            var before = token[..thinkStart];
+                            if (!string.IsNullOrEmpty(before))
+                            {
+                                output += before;
+                            }
+
+                            isThinking = true;
+                            token = token[(thinkStart + "<think>".Length)..];
+                        }
+                        else
+                        {
+                            output += token;
+                            continue;
+                        }
+                    }
+
                     if (isThinking)
                     {
-                        thinking += token;
-                    }
-                    else
-                    {
-                        output += token;
+                        var thinkEnd = token.IndexOf("</think>", StringComparison.OrdinalIgnoreCase);
+                        if (thinkEnd >= 0)
+                        {
+                            thinking += token[..thinkEnd];
+                            isThinking = false;
+                            var after = token[(thinkEnd + "</think>".Length)..];
+                            if (!string.IsNullOrEmpty(after))
+                            {
+                                output += after;
+                            }
+                        }
+                        else
+                        {
+                            thinking += token;
+                        }
                     }
                 }
             }
@@ -156,7 +188,7 @@ public class ChainService
                 ModelName = model.Name,
                 Input = input,
                 Output = output,
-                Thinking = enableCoT ? thinking : null,
+                Thinking = enableCoT ? thinking.Trim() : null,
                 IsFinal = isFinal,
                 ExecutionTimeMs = stopwatch.ElapsedMilliseconds
             };

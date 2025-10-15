@@ -6,6 +6,7 @@ using LocalLlmAssistant.Services.Llm;
 using LocalLlmAssistant.Services.Rag;
 using LocalLlmAssistant.Services.Tools;
 using LocalLlmAssistant.SSE;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
@@ -77,6 +78,26 @@ builder.Services.AddScoped<LocalLlmAssistant.Services.HistoryCompressor>();
 builder.Services.AddScoped<LocalLlmAssistant.Services.Chain.ChainService>();
 builder.Services.AddScoped<LlmClientResolver>();
 
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.Cookie.Name = "waylight-auth";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+        options.Events.OnRedirectToLogin = context =>
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            return Task.CompletedTask;
+        };
+        options.Events.OnRedirectToAccessDenied = context =>
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            return Task.CompletedTask;
+        };
+    });
+builder.Services.AddAuthorization();
+
 // OllamaClient と LmStudioClient は LlmClientResolver で動的に作成されるため、
 // 直接登録しない（ActivatorUtilities.CreateInstance を使用）
 
@@ -111,6 +132,9 @@ using (var scope = app.Services.CreateScope())
 // 静的ファイルの提供を有効化
 app.UseDefaultFiles();
 app.UseStaticFiles();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 // CORS設定（必要に応じて）
 if (app.Environment.IsDevelopment())
